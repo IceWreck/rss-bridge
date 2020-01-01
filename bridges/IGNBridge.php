@@ -4,7 +4,7 @@ class IGNBridge extends FeedExpander {
 	const MAINTAINER = 'IceWreck';
 	const NAME = 'IGN Bridge';
 	const URI = 'https://www.ign.com/';
-	const CACHE_TIMEOUT = 3600;
+	const CACHE_TIMEOUT = 10;
 	const DESCRIPTION = 'RSS Feed For IGN';
 
 	public function collectData(){
@@ -18,6 +18,27 @@ class IGNBridge extends FeedExpander {
 
 		// $articlePage gets the entire page's contents
 		$articlePage = getSimpleHTMLDOM($newsItem->link);
+
+		// List of BS elements
+		$uselessElements = array(
+			'.wiki-page-tools',
+			'.feedback-container',
+			'.paging-container',
+			'.dropdown-wrapper',
+			'.mw-editsection',
+			'.jsx-4115608983',
+			'.jsx-4213937408',
+			'.commerce-container',
+			'.widget-container',
+			'.newsletter-signup-button'
+		);
+
+		// Remove useless elements
+		foreach($uselessElements as $uslElement) {
+			foreach($articlePage->find($uslElement) as $jsWidget) {
+				$jsWidget->remove();
+			}
+		}
 
 		/*
 		* NOTE: Though articles and wiki/howtos have seperate styles of pages, there is no mechanism
@@ -33,19 +54,8 @@ class IGNBridge extends FeedExpander {
 		}
 
 		// For Wikis and HowTos
-		$uselessWikiElements = array(
-			'.wiki-page-tools',
-			'.feedback-container',
-			'.paging-container'
-		);
 		foreach($articlePage->find('.wiki-page') as $wikiContents) {
-			$copy = clone $wikiContents;
-			// Remove useless elements present in IGN wiki/howtos
-			foreach($uselessWikiElements as $uslElement) {
-				$toRemove = $wikiContents->find($uslElement, 0);
-				$copy = str_replace($toRemove, '', $copy);
-			}
-			$article = $article . $copy;
+			$article = $article . $wikiContents;
 		}
 
 		// Add content to feed
